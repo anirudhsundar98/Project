@@ -1,0 +1,985 @@
+<!DOCTYPE HTML>
+<html>
+<title>World 1-1</title>
+
+<style>
+body {
+	background-color : lightGreen;
+}
+
+canvas {
+	border : 1px solid black;
+	position : relative;
+	top : 100px;
+}
+</style>
+
+<body>
+
+<center>
+<canvas id="canvas" height="300" width="384">Your browser does not support the HTML5 Canvas Element</canvas>
+</center>
+
+</body>
+<script>
+ 
+var canvas = document.getElementById("canvas"),
+    ctx = canvas.getContext("2d"),
+    width = 384,
+    height = 300,
+	
+    mario = {
+        x : width / 10,
+        y : height - 30 - 15,
+        width : 20,
+        height : 20,
+        velX : 0,
+        velY : 0,
+        jumping : false,
+        grounded : false,
+		dead : false
+    },
+    background = {
+		x : 0,
+		y : 0,
+		velX : 0,
+    },
+	fireBall = {
+		x : -10,
+		y : -10,
+		width : 8,
+		height : 7,
+		velX : 5,
+		velY : 0,
+		timeout : 450
+	}
+	marioSheet = {
+		x : 0,
+		frameNo : 0,
+		frameSpeed : 0.25
+	},
+	goombaSheet = {
+		x : 0,
+		frameNo : 0,
+		frameSpeed : 0.125
+	}
+	
+	left = 0,
+	leftRelease = 0,
+	right = 0,
+	rightRelease = 1,
+	jump = 0,
+	pause = 0,	
+	usingFire = false,
+	
+    speed = 3,
+    slip = 0.9,
+	jumpSpeed = 7.6,
+    gravity = 0.3,
+	firePower = false;
+	
+    bgReady = 0,
+	marioReady = 0,
+	goombaReady = 0,
+	brickReady = 0,
+	questionBlockReady = 0,
+	usedBlockReady = 0,
+	flowerReady = 0,
+	fireReady = 0,
+	
+	complete = 0,
+	gameOver = 0;
+	
+//---------------------------------------------------------------------OBSTACLES/GOOMBAS--------------------------------------------------------------------
+positions();
+
+function positions() {
+		obstacles = [],
+		goomba = [],
+		fireFlower = [],
+		flagX = 4235;
+			
+	var	blocksGround = [ [2871, 4, "left"], [2999, 4, "right"], [3170, 4, "left"], [3320, 4, "right"], [3878, 8, "left"] ],
+		
+		blocksSky1 = [ [343, 1, "special"], [428, 1, "normal"], [450, 1, "special"], [472, 1, "normal"], [494, 1, "special"], [516, 1, "normal"], 
+		[1650, 1, "normal"], [1672, 1, "special"], [1694, 1, "normal"], [2014, 1 ,"normal"], [2142, 2, "normal"], [2271, 1, "special"], [2335, 1, "special"],
+		[2400, 1, "special"], [2528, 1, "normal"], [2764, 2, "normal"], [3599, 1, "normal"], [3621, 1, "normal"], [3642, 1, "special"], [3662, 1, "normal"] ],
+		
+		blocksSky2 = [ [471, 1, "special"], [1714, 8, "normal"], [1950, 3, "normal"], [2014, 1, "special"], [2335, 1, "special"], [2592, 3 ,"normal"], 
+		[2742, 1, "normal"], [2764, 2, "special"], [2807.7, 1, "normal"] ];
+	
+	//FLOOR
+	obstacles.push({
+		x: -1,
+		y: 0,
+		width: 1,
+		height: height
+	});
+	obstacles.push({
+		x: 4256,
+		y: 0,
+		width: 400,
+		height: 219
+	});
+	obstacles.push({
+		x: 4541,
+		y: 0,
+		width: 1,
+		height: height
+	});
+	obstacles.push({
+		x: 0,
+		y: 270,
+		width: 1478,
+		height: 100
+	});
+	obstacles.push({
+		x: 1520,
+		y: 270,
+		width: 324,
+		height: 100
+	});
+	obstacles.push({
+		x: 1906,
+		y: 270,
+		width: 1373,
+		height: 100
+	});
+	obstacles.push({
+		x: 3319,
+		y: 270,
+		width: 1223,
+		height: 100
+	});
+
+	//PIPES
+	obstacles.push({
+		x: 600,
+		y: 226,
+		width: 43,
+		height: 75
+	});
+	obstacles.push({
+		x: 814,
+		y: 205,
+		width: 43,
+		height: 96
+	});
+	obstacles.push({
+		x: 986,
+		y: 184,
+		width: 43,
+		height: 117
+	});
+	obstacles.push({
+		x: 1221,
+		y: 184,
+		width: 43,
+		height: 117
+	});
+	obstacles.push({
+		x: 3493,
+		y: 226,
+		width: 43,
+		height: 75
+	});
+	obstacles.push({
+		x: 3835,
+		y: 226,
+		width: 43,
+		height: 75
+	});
+
+	//GROUND BLOCKS
+	obstacles.push({
+		x: 4242,
+		y: height - 30 - 21.7,
+		width: 21.7,
+		height: 21.7
+	});
+	for (var count = 0; count < blocksGround.length; count++)
+		baseBlocks(blocksGround[count][0], blocksGround[count][1], blocksGround[count][2]);
+
+	function baseBlocks(blockX, colNum, dir) {
+		if (dir === "left") {
+			var blockY = height - 30 - 21.7;
+			for (var num = 1; num <= colNum; blockX += 21.7, blockY -= 21.7, num++)
+				obstacles.push({
+					x: blockX + 1,
+					y: blockY,
+					width: 21.7,
+					height: num * 21.7
+				});
+			if (count == 2 || count == 4)
+			obstacles.push({
+				x: blockX + 1,
+				y: blockY + 21.7,
+				width: 21.7,
+				height: (num-1) * 21.7
+			});
+		}
+		else if (dir === "right") {
+			var num = colNum;
+			var blockY = height - 30 - num*21.7;
+			for (; num >= 1; blockX += 21.7, blockY += 21.7, num--)
+				obstacles.push({
+					x: blockX - 1,
+					y: blockY,
+					width: 21.7,
+					height: num * 21.7
+				});
+		}
+	}
+
+	//OVERHEAD BLOCKS
+	for (var count = 0; count < blocksSky1.length; count++)
+		overheadBlocks1(blocksSky1[count][0], blocksSky1[count][1], blocksSky1[count][2]);
+		
+	for (var count = 0; count < blocksSky2.length; count++)
+		overheadBlocks2(blocksSky2[count][0], blocksSky2[count][1], blocksSky2[count][2]);
+		
+	function overheadBlocks1 (blockX, blockNum, blockType) {
+		for (var num = 1; num <= blockNum; blockX += 21.7, num++)
+			obstacles.push({
+				x: blockX,
+				y: 183,
+				width: 22,
+				height: 21.7,
+				velY : 0,
+				type : blockType
+			});
+	}
+
+	function overheadBlocks2 (blockX, blockNum, blockType) {
+		for (var num = 1; num <= blockNum; blockX += 21.6, num++)
+			obstacles.push({
+				x: blockX,
+				y: 97,
+				width: 22,
+				height: 21.7,
+				velY : 0,
+				type : blockType
+			});			
+	}
+
+	//GOOMBAS
+	goomba.push({
+		x: 475,
+		y: height - 30 - 21.7,
+		width: 17.7,
+		height: 21.7,
+		velX : 0.9,
+		velY : 0,
+		grounded: false,
+		flat : false,
+		dead : false,
+		blank : false
+	});
+	goomba.push({
+		x: 862,
+		y: height - 30 - 21.7,
+		width: 17.7,
+		height: 21.7,
+		velX : 0.9,
+		velY : 0,
+		grounded: false,
+		flat : false,
+		dead : false,
+		blank : false
+	});
+	goomba.push({
+		x: 1719,
+		y: 97 - 21.7,
+		width: 17.7,
+		height: 21.7,
+		velX : 0.9,
+		velY : 0,
+		grounded: false,
+		flat : false,
+		dead : false,
+		blank : false
+	});
+	goomba.push({
+		x: 1762,
+		y: 97 - 21.7,
+		width: 17.7,
+		height: 21.7,
+		velX : 0.9,
+		velY : 0,
+		grounded: false,
+		flat : false,
+		dead : false,
+		blank : false
+	});
+	goombaPairs(1092);
+	goombaPairs(2078);
+	goombaPairs(2443);
+	goombaPairs(2657);
+	goombaPairs(2743);
+	goombaPairs(3728);
+
+	function goombaPairs (goombaX) {
+		for (var num = 0; num < 2; num++, goombaX += 34)
+			goomba.push({
+				x: goombaX + 4,
+				y: height - 30 - 21.7,
+				width: 17.7,
+				height: 21.7,
+				velX : 0.9,
+				velY : 0,
+				grounded: false,
+				flat : false,
+				dead : false,
+				blank : false
+			});
+	}	
+	
+	//FIRE FLOWERS
+	fireFlower.push({
+		x: 452,
+		y: 183,
+		width: 17,
+		height: 17,
+		appear : false
+	});	
+	fireFlower.push({
+		x: 1674,
+		y: 183,
+		width: 17,
+		height: 17,
+		appear : false
+	});
+	fireFlower.push({
+		x: 2402,
+		y: 183,
+		width: 17,
+		height: 17,
+		appear : false
+	});	
+
+}
+
+	
+
+/*
+koopa.push({
+	x: 2293,
+	y: height - 30 - 32,
+	width: 21.7,
+	height: 21.7
+});
+*/
+		
+	
+//---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+var jumpSound = new Audio("Jump.wav");
+jumpSound.volume = 0.7;
+
+var bgMusic = new Audio("World 1-1 BGMusic.ogg");
+bgMusic.play();
+
+var deathSound = new Audio("Death.wav");
+
+var flagSound = new Audio("Flagpole.wav");
+
+
+var bgImg = new Image();
+bgImg.src = "World 1-1 (Overworld) Enlarged.png";
+bgImg.onload = function() {
+	bgReady = 1;
+};
+
+var marioImg = new Image();
+marioImg.onload = function() {
+	marioReady = 1;
+};
+
+var goombaImg = new Image();
+goombaImg.src = "Goomba.png";
+goombaImg.onload = function() {
+	goombaReady = 1;
+};
+
+var brick = new Image();
+brick.src = "Overhead Block.png";
+brick.onload = function() {
+	brickReady = 1;
+};
+
+var questionBlock = new Image();
+questionBlock.src = "Mystery Box.png";
+questionBlock.onload = function() {
+	questionBlockReady = 1;
+};
+
+var usedBlock = new Image();
+usedBlock.src = "Used Mystery Box.png";
+usedBlock.onload = function() {
+	usedBlockReady = 1;
+};
+
+var flowerImg = new Image();
+flowerImg.src = "Fire Flower.png";
+flowerImg.onload = function() {
+	flowerReady = 1;
+};
+
+var fireImg = new Image();
+fireImg.src = "Fire Ball.png";
+fireImg.onload = function() {
+	fireReady = 1;
+};
+
+
+document.body.addEventListener("keydown", function (e) {
+	if(e.keyCode == 37) {
+		left = 1;
+		leftRelease = 0;
+		rightRelease = 0;
+	}
+	if (e.keyCode == 38)
+		jump = 1;
+	if(e.keyCode == 39) {
+		right = 1;
+		rightRelease = 0;
+		leftRelease = 0;
+	}	
+	if(e.keyCode == 88) 
+	if(firePower)
+	if(fireBall.timeout > 30 && (fireBall.x > 400 || fireBall.x < 0 || fireBall.x - mario.x < 8)) {
+		var fireSound = new Audio("Fireball.wav");
+		fireSound.play();
+		fireBall.timeout = 0;
+		usingFire = true;
+	}
+	
+	if(!gameOver && !complete)
+		if (e.keyCode == 13) { 
+			var pauseSound = new Audio("Pause.wav");
+			pauseSound.play();
+			if(!pause) {
+				pause = 1;
+				bgMusic.pause();
+			}
+			else {
+				pause = 0;
+				bgMusic.play();
+			}	
+		}
+				
+});
+ 
+document.body.addEventListener("keyup", function (e) {
+	if(e.keyCode == 37) {
+		left = 0;
+		leftRelease = 1;
+	}
+	if (e.keyCode == 38)
+		jump = 0; 
+	if (e.keyCode == 39) {
+		right = 0;
+		rightRelease = 1;
+	}
+});
+
+ 
+
+function game() {
+	if(bgMusic.currentTime >= 174.5)
+		bgMusic.currentTime = 2;
+	
+	if(!pause){
+		ctx.clearRect(0, 0, width, height);
+		if(bgReady)
+			ctx.drawImage(bgImg, background.x, background.y, 4543, 300);
+
+		if (mario.y > height)
+			lifeEnd();
+
+		if(!gameOver) {
+			if (jump)
+				if (!mario.jumping && mario.grounded) {
+					jumpSound.currentTime = 0;
+					jumpSound.play();					
+					mario.jumping = true;
+					mario.grounded = false;
+					mario.velY = -jumpSpeed;
+				}
+			if( !(left && right) ) {
+				if (right) {
+					if (mario.x > width/2.5 && background.x > -4143) {
+						if (background.velX < speed)
+						background.velX += 0.4;
+					}
+					else {
+						if (mario.velX < speed)
+						mario.velX += 0.4;         
+					}     
+				}     
+				if (left)
+					if (mario.velX > -speed)
+					mario.velX -= 0.4;
+			}
+			
+			if (!right)
+				background.velX *= slip;
+			if (!right || mario.x > width/2.5)
+				mario.velX *= slip;
+			if(background.x < -4143)
+				background.velX = 0;
+			mario.velY += gravity;
+			for(var count = 0; count < goomba.length; count++)
+				goomba[count].velY += gravity;
+			for(var count = 40; count < obstacles.length; count++) {
+				obstacles[count].velY += gravity;
+				if(count < 62) {
+					if(obstacles[count].y > 183) {
+					obstacles[count].y = 183;
+					obstacles[count].velY = 0;
+					}
+				}
+				else if(obstacles[count].y > 97) {
+					obstacles[count].y = 97;
+					obstacles[count].velY = 0;
+				}
+			}
+			if(firePower) {
+				if(!usingFire) {
+					if(left || leftRelease)
+						fireBall.velX = -5;
+					if (right || rightRelease)
+						fireBall.velX = 5;
+				}
+				fireBall.velY += gravity;
+				if(fireBall.x > 400 || fireBall.x < -10)
+					usingFire = false;
+				if(!usingFire) {
+					fireBall.x = mario.x + 7;
+					fireBall.y = mario.y + 3;
+					fireBall.velY = 2;
+				}
+			}
+
+				
+			
+			mario.grounded = false;
+			for(var count = 0; count < goomba.length; count++)
+				goomba[count].grounded = false;
+			
+			for(var count = 0; count < obstacles.length; count++) {
+								
+				var obstacleCollision = collCheck(mario, obstacles[count]); //collision between mario and obstacles
+				if (obstacleCollision === "left" || obstacleCollision === "right") {
+					mario.velX = 0;
+					background.velX = 0;
+				} 
+				else if (obstacleCollision === "bottom") {
+					var blockBounce = new Audio("Bump.wav");
+					blockBounce.play();
+					
+					for(var num = 0; num < fireFlower.length; num++)
+					if( Math.abs(fireFlower[num].x - obstacles[count].x) < 3) {
+						if(!fireFlower[num].appear) {
+							fireFlower[num].appear = true;
+							var appearSound = new Audio("Powerup Appears.wav");
+							appearSound.play();							
+						}
+					}
+					mario.velY *= -0.5;
+					if(obstacles[count].type != "used")
+						obstacles[count].velY = -2;
+					if (obstacles[count].type == "special")
+					obstacles[count].type = "used";
+				}
+				else if (obstacleCollision === "top")
+				if(mario.velY >= 0) {
+					mario.grounded = true;
+					mario.jumping = false;
+				} 
+					
+				
+				var fireCollision = collCheck(fireBall, obstacles[count]); //fire and obstacles
+				if (fireCollision === "left" || fireCollision === "right") {
+					usingFire = false;
+					fireBall.x = mario.x + 7;
+					fireBall.y = mario.y + 3;
+				}
+				else if (fireCollision === "top"){
+					fireBall.velY = -3;
+				} 				
+				
+				
+				if(count) {
+					for (var num = 0; num < goomba.length; num++) 
+					if(!goomba[num].dead) {
+						goombaCollision = collCheck(goomba[num], obstacles[count]); //obstacle and goomba collisions
+					
+						if (goombaCollision === "left" || goombaCollision === "right")
+							goomba[num].velX *= -1;
+						else if (goombaCollision === "top") {
+							goomba[num].grounded = true;
+							if(obstacles[count].type)
+							if(obstacles[count].velY < 0) {
+								var kick = new Audio("Kick.wav");
+								kick.play();
+								goomba[num].dead = true;
+								goomba[num].velY = -3;
+							}
+						}
+					}
+				}
+			}
+			
+			for(var count = 0; count < fireFlower.length; count++) {
+				flowerCollision = collCheck(mario, fireFlower[count]); 
+				
+				if (flowerCollision) {
+					var powerUp = new Audio("Power Up.wav");
+					powerUp.play();
+					firePower = true;
+					fireFlower[count].y = -20;
+				}
+			}
+			
+			for(var count = 0; count < goomba.length; count++) 
+			if(!goomba[count].dead) {
+				for (var num = 0; num < goomba.length; num++) 
+				if (num != count && !goomba[num].dead) {
+					goombaCollision = collCheck(goomba[count], goomba[num]); //inter goomba collisions
+					
+					if (goombaCollision === "left" || goombaCollision === "right") {
+						goomba[count].velX *= -1;
+						goomba[num].velX *= -1;
+					}
+				}
+				
+				if(!goomba[count].flat) {
+					fireCollision = collCheck(fireBall, goomba[count]);
+					if (fireCollision) {
+						var kick = new Audio("Kick.wav");
+						kick.play();					
+						goomba[count].dead = true;
+						goomba[count].velY = -3;
+						usingFire = false;
+					}
+				}
+				
+			}
+
+			for(var count = 0; count < goomba.length; count++)
+			if(!goomba[count].flat && !goomba[count].dead){
+				var goombaCollision = collCheck(mario, goomba[count]); //mario and goomba collisions
+				
+				if (goombaCollision === "left" || goombaCollision === "right" || goombaCollision === "bottom") {
+					if(firePower) {
+						goomba[count].dead = true;
+						var powerDown = new Audio("Power Down.wav");
+						powerDown.play();
+						firePower = false;
+					}
+					else {
+						mario.jumping = false;
+						lifeEnd();
+					}
+				} 
+				else if (goombaCollision === "top") {
+					var goombaDead = new Audio("Stomp.wav");
+					goombaDead.volume = 0.7;
+					goombaDead.play();
+					mario.velY = -2;
+					goomba[count].flat = true;
+					mario.grounded = false;
+					mario.jumping = true;
+				} 
+			}
+		
+			if(mario.x >= flagX) 
+				complete = 1;
+		}
+		else lifeEnd();
+
+			
+		if(complete)
+			gameComplete();
+		
+		if(!firePower) {
+			if(complete == 1)
+				marioImg.src = "Mario Complete.png";
+			else if (mario.jumping && !mario.grounded && !gameOver && complete != 2)
+				marioImg.src = "Small Mario Jump.png";
+			else marioImg.src = "Small Mario Sheet.png";
+		}
+		else {
+			if(complete == 1)
+				marioImg.src = "Mario Complete_Fire.png";
+			else if (mario.jumping && !mario.grounded && !gameOver && complete != 2)
+				marioImg.src = "Small Mario Jump_Fire.png";
+			else marioImg.src = "Small Mario Sheet_Fire.png";
+		}
+		drawBlocks();
+		drawChar();
+			
+		if(!gameOver){
+			if(mario.grounded)
+				 mario.velY = 0;
+
+			for(var count = 0; count < fireFlower.length; count++)
+				if (fireFlower[count].appear && fireFlower[count].y > 166)
+					fireFlower[count].y--;
+			
+			for(var count = 0; count < goomba.length; count++)
+				if(goomba[count].grounded && !goomba[count].dead)
+				goomba[count].velY = 0;
+				
+			if( !(left && right) ) {
+				mario.x += mario.velX;
+				background.x -= background.velX;
+				flagX -= background.velX;
+				for(var count = 1; count < obstacles.length; count++)
+					obstacles[count].x -= background.velX;	
+			}
+			for(var count = 40; count < obstacles.length; count++)
+				obstacles[count].y += obstacles[count].velY;
+			
+			mario.y += mario.velY;
+			
+			if(firePower)
+				if(fireBall.timeout <= 30 || (fireBall.x < 400 && fireBall.x > 0 && fireBall.x - mario.x > 8)) {
+					if(usingFire) {
+						fireBall.x -= background.velX;
+						fireBall.y += fireBall.velY;
+						fireBall.x += fireBall.velX;
+					}
+					fireBall.timeout++;
+				}
+				
+			for(var count = 0; count < goomba.length; count++) {
+				if( !(left && right) )
+					goomba[count].x -= background.velX;
+				goomba[count].y += goomba[count].velY;
+				if (goomba[count].x < 389 && !goomba[count].flat)
+					goomba[count].x -= goomba[count].velX;
+			}
+			
+			for(var count = 0; count < fireFlower.length; count++) 
+				fireFlower[count].x -= background.velX;
+		}
+	}
+	
+	requestAnimationFrame(game);
+}
+
+function newGame() {
+	gameOver = 0;
+	mario.x = width/10;
+	mario.y = height - 30;
+	background.x = 0;
+	background.velX = 0;
+	mario.dead = false;
+	slip = 0.9;
+	complete = 0;
+	mario.velX = 0;
+	mario.velY = 0;
+	deathSound.currentTime = 0;
+	flagSound.currentTime = 0;
+	positions();
+	bgMusic = new Audio("World 1-1 BGMusic.ogg");
+	bgMusic.play();
+}
+
+function drawBlocks() {	
+	for(count = 0; count < fireFlower.length; count++) 
+	if(flowerReady)
+		ctx.drawImage(flowerImg, fireFlower[count].x, fireFlower[count].y, fireFlower[count].width, fireFlower[count].height);
+		
+	for(count = 40; count < obstacles.length; count++) 
+	if(obstacles[count].type) {
+		if (obstacles[count].type == "normal") {
+			if (brickReady)
+			ctx.drawImage(brick, obstacles[count].x, obstacles[count].y, obstacles[count].width, obstacles[count].height);
+		}
+		else if (obstacles[count].type == "special") {
+			if(questionBlockReady)
+			ctx.drawImage(questionBlock, obstacles[count].x, obstacles[count].y, obstacles[count].width, obstacles[count].height);
+		}
+		else if(usedBlockReady)
+			ctx.drawImage(usedBlock, obstacles[count].x, obstacles[count].y, obstacles[count].width, obstacles[count].height);
+	}	
+}	
+
+function drawChar() {
+	
+	if(!gameOver){
+		if (goombaSheet.frameNo >= 1.75)
+			goombaSheet.frameNo = 0;
+		else goombaSheet.frameNo += 0.125;
+	}
+	
+	if(goombaReady) 
+	for(var count = 0; count < goomba.length; count++) {
+		if (!goomba[count].dead) {
+			if(!goomba[count].flat){
+				if(goombaSheet.frameNo >= 1)
+					goombaSheet.x = 30;
+				else goombaSheet.x = 0;
+				ctx.drawImage(goombaImg, goombaSheet.x, 0, 16, 16, goomba[count].x - 4, goomba[count].y, goomba[count].width + 4, goomba[count].height);
+			}
+			else ctx.drawImage(goombaImg, 60, 4, 16, 8, goomba[count].x - 4, goomba[count].y + 12, goomba[count].width + 4, goomba[count].height/2);
+		}
+		else ctx.drawImage(goombaImg, 90, 0, 16, 16, goomba[count].x - 4, goomba[count].y, goomba[count].width + 4, goomba[count].height);
+	}
+
+	if(usingFire && firePower)
+	if(fireReady)
+		ctx.drawImage(fireImg, fireBall.x, fireBall.y, fireBall.width, fireBall.height);
+	
+	if(marioReady && (mario.x - background.x <= 4375)) {
+		if (complete == 1)
+			ctx.drawImage(marioImg, mario.x, mario.y, mario.width - 3, mario.height);
+		
+		else if (complete == 2) {
+			marioSheet.x = Math.floor(marioSheet.frameNo) * 15.5;
+			if (marioSheet.frameNo > 3.5)
+				marioSheet.frameNo = 1;
+			else if (right)
+				marioSheet.frameNo += marioSheet.frameSpeed;
+			else marioSheet.frameNo += marioSheet.frameSpeed/2;
+			ctx.drawImage(marioImg, marioSheet.x, 0, 14.7, 16, mario.x, mario.y, mario.width, mario.height);
+			if (!mario.dead) {
+				var bgMusic = new Audio("Stage Clear.wav");
+				bgMusic.play();
+				mario.dead = true;
+				setTimeout(newGame, 6000);
+			}
+		}
+			
+		else if(gameOver)
+			ctx.drawImage(marioImg, 95, 0, 13, 14, mario.x, mario.y, mario.width - 1, mario.height);
+			
+		else if (mario.jumping && !mario.grounded) {
+			if(!right && !rightRelease && (mario.velX < 0 || leftRelease || left ) )
+				marioSheet.x = 19;
+			else marioSheet.x = 0;
+			ctx.drawImage(marioImg, marioSheet.x, 0, 16, 16, mario.x, mario.y, mario.width - 1, mario.height);
+		}
+		
+		else if ((!left && rightRelease) || (left && right))
+			ctx.drawImage(marioImg, 0, 0, 12, 16, mario.x, mario.y, mario.width - 4, mario.height);
+			
+		else if (!right && leftRelease)
+			ctx.drawImage(marioImg, 128, 18, 13, 16, mario.x, mario.y, mario.width - 5, mario.height);
+			
+		else if (left && !right && mario.velX <= 0 && background.velX < 1.7) {
+			if(mario.grounded)
+				marioSheet.x = 80 + Math.floor(marioSheet.frameNo) * 15.5;
+			if (marioSheet.frameNo > 2.5)
+				marioSheet.frameNo = 0;
+			else marioSheet.frameNo += marioSheet.frameSpeed;
+			ctx.drawImage(marioImg, marioSheet.x, 18, 16, 16, mario.x, mario.y, mario.width, mario.height);
+		}
+			
+		else if (left && (mario.velX >= -0.2 || background.velX > 1.7) )
+			ctx.drawImage(marioImg, 64, 18, 12, 16, mario.x, mario.y, mario.width - 6, mario.height);
+			
+		else if ( right && !left && (mario.velX >= 0 || background.velX > 1.7) ){
+			if(mario.grounded || complete == 2)
+				marioSheet.x = Math.floor(marioSheet.frameNo) * 15.5;
+			if (marioSheet.frameNo > 3.5)
+				marioSheet.frameNo = 1;
+			else marioSheet.frameNo += marioSheet.frameSpeed;
+			ctx.drawImage(marioImg, marioSheet.x, 0, 14.7, 16, mario.x, mario.y, mario.width, mario.height);
+		}
+		
+		else if (right && mario.velX < 0)
+			ctx.drawImage(marioImg, 64, 0, 12, 16, mario.x, mario.y, mario.width - 6, mario.height);	
+			
+	}
+	
+	if(mario.y > 2000) {
+		ctx.fillStyle = "black";
+		ctx.fillRect(0, 0, 390, 384);
+		ctx.fillStyle = "white";
+		ctx.font = "40px Times New Roman";
+		ctx.fillText("Game Over" , 100, 150);
+	}
+}
+ 
+function collCheck(object1, object2) {
+    var delX = (object1.x + (object1.width/2)) - (object2.x + (object2.width/2)),
+        delY = (object1.y + (object1.height/2)) - (object2.y + (object2.height/2)),
+        halfWidths = (object1.width/2) + (object2.width/2),
+        halfHeights = (object1.height/2) + (object2.height/2),
+        collDir = null;
+
+    if (Math.abs(delX) < halfWidths && Math.abs(delY) < halfHeights) { 
+		var xCheck = halfWidths - Math.abs(delX),             
+			yCheck = halfHeights - Math.abs(delY);         
+		if (xCheck + 7  >  yCheck) {
+            if (delY > 0) {
+                collDir = "bottom";
+                object1.y += yCheck + 0.001;
+            } 
+			else {
+                collDir = "top";
+                object1.y -= yCheck + 0.001;
+            }
+        } 
+		else {
+            if (delX > 0) {
+                collDir = "right";
+                object1.x += xCheck + 0.001;
+            } 
+			else {
+                collDir = "left";
+                object1.x -= xCheck + 0.01;
+            }
+        }
+    }
+    return collDir;
+}
+
+function lifeEnd () {
+	bgMusic.pause();
+	gameOver = 1;
+	if(!mario.dead) {
+		mario.velY = -4.5;
+		mario.dead = true;
+		deathSound.play();	
+		setTimeout(newGame, 6000);
+	}
+	mario.velY += gravity/2;
+	mario.y += mario.velY;
+}
+
+function gameComplete() {
+	if(complete != 2)
+		bgMusic.pause();
+	if(flagSound.currentTime == 0)
+		flagSound.play();
+	
+	mario.velX = 0;
+	slip = 0;
+	mario.velY = 0;
+	if(mario.jumping)
+		mario.y++;
+	else {
+		flagSound.pause();
+		complete = 2;
+		mario.x++;
+		mario.velY = gravity * 3;
+		mario.y += mario.velY
+	}
+}
+
+
+	
+var requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
+
+game();
+
+
+
+
+</script>
+</html>
